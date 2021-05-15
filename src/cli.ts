@@ -6,7 +6,7 @@ import {createLocalBrowser} from "./createBrowser";
 
 const program = new Command();
 
-const getType = (mime: string): string => {
+const getType = (mime: string = 'undefined'): string => {
   if (mime.startsWith('image/svg')) {
     return 'svg';
   }
@@ -22,12 +22,18 @@ const getType = (mime: string): string => {
   return mime.split(';')[0];
 }
 
+const parseBool = (x: string): boolean => x !== 'false'
+
 program
   .arguments('<url>')
   .option('-w, --width <number>', 'width', '1024')
   .option('-h, --height <number>', 'height', '768')
   .option('-dpr, --device-pixel-ratio <number>', 'device pixel ratio', '1')
+  .option('-ph, --per-host <flag>', 'list information per host', parseBool, true)
+  .option('-pt, --per-type <flag>', 'list information per resource type', parseBool, true)
   .option('-f, --focus <type>', 'focus on specific type')
+  .option('--host <string>', 'focus on specific host')
+  .option('-lh, --ignore-hosts <hosts...>', 'ignore set of host')
   .action(async (url, options) => {
     measure(
       await createLocalBrowser(+options.width, +options.height, +options.devicePixelRatio),
@@ -38,6 +44,12 @@ program
       data.forEach((resource) => {
         const type = getType(resource.type);
         if (options.focus && options.focus !== type) {
+          return;
+        }
+        if (options.ignoreHosts && options.ignoreHosts.includes(resource.host)) {
+          return;
+        }
+        if (options.host && options.host !== resource.host) {
           return;
         }
         if (!types[type]) {
@@ -54,8 +66,12 @@ program
         perType[type].bytes += resource.size;
         perType[type].count += 1;
       });
-      console.log(JSON.stringify(perType, undefined, 2))
-      console.log(JSON.stringify(types, undefined, 2))
+      if (options.perType) {
+        console.log(JSON.stringify(perType, undefined, 2))
+      }
+      if (options.perHost) {
+        console.log(JSON.stringify(types, undefined, 2))
+      }
     })
       .then(() => process.exit(0))
   });

@@ -25,13 +25,12 @@ export async function measure(browser: FactoredBrowser, targetUrl: string): Prom
         size: (await response.buffer()).length,
       })
     } catch (e) {
-      console.error('error processing', url);
+      // suppress
+      // console.error('error processing', url);
     }
   });
 
   await page.goto(targetUrl, {waitUntil: 'networkidle2'});
-
-  // await page.screenshot({path: resolve(process.cwd(),'measure.png'), fullPage: true});
 
   await page.close();
   browser.close();
