@@ -41,6 +41,20 @@ program
     ).then((data) => {
       const types: Record<string, Record<string, number>> = {};
       const perType: Record<string, { count: number, bytes: number }> = {};
+
+      const typeRec = new Set<string>();
+      data.forEach((resource) => {
+        typeRec.add(getType(resource.type));
+      });
+      // using presorted types to keep result always ordered in the same way
+      Array.from(typeRec.values()).sort().forEach(type => {
+        types[type] = {};
+        perType[type] = {
+          count: 0,
+          bytes: 0,
+        };
+      })
+
       data.forEach((resource) => {
         const type = getType(resource.type);
         if (options.focus && options.focus !== type) {
@@ -52,13 +66,7 @@ program
         if (options.host && options.host !== resource.host) {
           return;
         }
-        if (!types[type]) {
-          types[type] = {};
-          perType[type] = {
-            count: 0,
-            bytes: 0,
-          };
-        }
+
         if (!types[type][resource.host]) {
           types[type][resource.host] = 0;
         }
